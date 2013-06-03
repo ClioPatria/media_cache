@@ -11,6 +11,10 @@
 		http_thumbnail,  [spawn(media)]).
 :- http_handler(root(cache/medium),
 		http_mediumscale,  [spawn(media)]).
+:- http_handler(root(cache/fit),
+		http_fit_thumbnail,  [spawn(media)]).
+:- http_handler(root(cache/fitmedium),
+		http_medium_fit,  [spawn(media)]).
 
 %%      original(+Request)
 %
@@ -39,10 +43,27 @@ do_http_thumbnail(Size, Request) :-
         uri_thumbnail(URI, ThumbnailFile, Size),
         http_reply_file(ThumbnailFile, [unsafe(true)], Request).
 
+/* http_pan_scan(+Request)
+* provides a pan and scanned version of the image fitting given dimensions
+*/
+http_fit_thumbnail(Request)  :- do_http_fit(thumbnail_size, Request).
+http_medium_fit(Request)  :- do_http_fit(medium_size, Request).
+
+do_http_fit(Size, Request) :-
+        http_parameters(Request,
+                        [ uri(URI, [])
+                        ]),
+        debug(thumbnail, 'Do fit for ~w', [URI]),
+        uri_fit_thumbnail(URI, ThumbnailFile, Size),
+        http_reply_file(ThumbnailFile, [unsafe(true)], Request).
+
+
 %%	map_uri(+URIin, -URIout) is det.
 %
 %	Hook to map media URIs to different URIs to work around known
 %	problems (e.g. images that are known to be wrong).
 %
 map_uri(U,U).
+
+
 

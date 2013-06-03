@@ -22,7 +22,8 @@
 */
 
 :- module(thumbnail,
-	  [ uri_thumbnail/3		% +URI, -File
+	  [ uri_thumbnail/3, % +URI, -File
+	    uri_fit_thumbnail/3
 	  ]).
 :- use_module(library(settings)).
 :- use_module(library(http/url_cache)).
@@ -35,14 +36,16 @@
 % Windows: 'cmd.exe /C convert.exe'
 :- setting(convert_program, atom, convert,
 	   'ImageMagic convert used to create thumbnails').
-:- setting(thumbnail_size, any, size(105,105),
+:- setting(thumbnail_size, any, size(350,300),
 	   'Term size(W,H) into which thumbnails are scaled').
-:- setting(medium_size, any, size(800,800),
+:- setting(medium_size, any, size(1280,1024),
 	   'Term size(W,H) into which medium sizes are scaled').
 :- setting(cache_directory, atom, 'cache/thumbnails',
 	   'Directory for caching thumbnails').
 :- setting(mcache_directory, atom, 'cache/mediums',
 	   'Directory for caching medium sized images').
+:- setting(fit_directory, atom, 'cache/fit',
+	   'Directory for images fitted to size').
 
 %%	uri_thumbnail(+URI, -File)
 %
@@ -58,6 +61,24 @@ uri_thumbnail(URI, File, Size) :-
 	->  debug(thumbnail, '[~w] CACHE: ~w', [Self, File])
 	;   debug(thumbnail, '[~w] Convert for ~w', [Self, File]),
 	    make_thumbnail(URI, File, Size)
+	).
+
+%%	uri_pan_scan(+URI, -File)
+%
+%       Return the panned and scanned for image at URI
+%
+%	TBD: Error recovery
+
+uri_fit_thumbnail(URI, File, Size) :-
+	setting(fit_directory, Dir0),
+	absolute_file_name(Dir0, Dir),
+	ensure_directory(Dir),
+	url_cache_file(URI, Dir, jpeg, File),
+	thread_self(Self),
+	(   exists_file(File)
+	->  debug(thumbnail, '[~w] CACHE: ~w', [Self, File])
+	;   debug(thumbnail, '[~w] Fit for ~w', [Self, File]),
+	    make_fit(URI, File, Size)
 	).
 
 %%	thumbnail_dir(-AbsDir, Size)
@@ -102,6 +123,31 @@ scale(Full, File, Size) :-
 	;   format(user_error, 'FAILED: ~w', [Cmd])
 	).
 
+%%	make_pan_scan(+URI, +File) is det.
+%
+%	Create a panscan for an image located at URI in the file
+%	File.
+make_fit(URI, File, Size) :-
+	local_file_for_uri(URI, Full), !,
+	debug(thumbnail, 'Creating panscan from ~w', [Full]),
+	fit(Full, File, Size).
+make_fit(URI, File, Size) :-
+	url_cache(URI, Full, _Mime),
+	fit(Full, File, Size).
+
+fit(Full, File, Size) :-
+	setting(Size, size(W, H)),
+	setting(convert_program, Prog),
+	os_relative_path(Full, OSFull),
+	os_relative_path(File, OSFile),
+	format(string(Cmd),
+	       '"~w" "~w" -thumbnail ~wx~w^ -gravity center -extent ~wx~w "~w"',
+	       [Prog, OSFull, W, H, W, H, OSFile, W, H]),
+	debug(thumbnail, "Panscan command~p", [Cmd]),
+	(   run(Cmd)
+	->  true
+	;   format(user_error, 'FAILED: ~w', [Cmd])
+	).
 
 %%	run(+Command) is det.
 %
