@@ -36,9 +36,9 @@
 % Windows: 'cmd.exe /C convert.exe'
 :- setting(convert_program, atom, convert,
 	   'ImageMagic convert used to create thumbnails').
-:- setting(thumbnail_size, any, size(350,300),
+:- setting(thumbnail_size, any, size(105,105),
 	   'Term size(W,H) into which thumbnails are scaled').
-:- setting(medium_size, any, size(1280,1024),
+:- setting(medium_size, any, size(800,800),
 	   'Term size(W,H) into which medium sizes are scaled').
 :- setting(cache_directory, atom, 'cache/thumbnails',
 	   'Directory for caching thumbnails').
@@ -63,9 +63,9 @@ uri_thumbnail(URI, File, Size) :-
 	    make_thumbnail(URI, File, Size)
 	).
 
-%%	uri_pan_scan(+URI, -File)
+%%	uri_fit_thumbnail(+URI, -File)
 %
-%       Return the panned and scanned for image at URI
+%       Return the fitted thumbnail for image at URI
 %
 %	TBD: Error recovery
 
@@ -123,9 +123,9 @@ scale(Full, File, Size) :-
 	;   format(user_error, 'FAILED: ~w', [Cmd])
 	).
 
-%%	make_pan_scan(+URI, +File) is det.
+%%	make_fit(+URI, +File) is det.
 %
-%	Create a panscan for an image located at URI in the file
+%	Create a fitted image located at URI in the file
 %	File.
 make_fit(URI, File, Size) :-
 	local_file_for_uri(URI, Full), !,

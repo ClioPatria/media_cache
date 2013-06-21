@@ -43,8 +43,8 @@ do_http_thumbnail(Size, Request) :-
         uri_thumbnail(URI, ThumbnailFile, Size),
         http_reply_file(ThumbnailFile, [unsafe(true)], Request).
 
-/* http_pan_scan(+Request)
-* provides a pan and scanned version of the image fitting given dimensions
+/* http_fit_thumbnail(+Request)
+* provides a fitted version of the image adhering given dimensions
 */
 http_fit_thumbnail(Request)  :- do_http_fit(thumbnail_size, Request).
 http_medium_fit(Request)  :- do_http_fit(medium_size, Request).
